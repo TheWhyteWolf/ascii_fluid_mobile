@@ -9,10 +9,25 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>ascii fluid // voyd</title>
 <style>
+  /* ===== bundled fonts (woff2, local) ===== */
+  @font-face{font-family:'JetBrains Mono';src:url('fonts/jetbrains-mono.woff2') format('woff2');font-weight:400;font-display:swap;}
+  @font-face{font-family:'IBM Plex Mono';src:url('fonts/ibm-plex-mono.woff2') format('woff2');font-weight:400;font-display:swap;}
+  @font-face{font-family:'Space Mono';src:url('fonts/space-mono.woff2') format('woff2');font-weight:400;font-display:swap;}
+  @font-face{font-family:'Share Tech Mono';src:url('fonts/share-tech-mono.woff2') format('woff2');font-weight:400;font-display:swap;}
+  @font-face{font-family:'VT323';src:url('fonts/vt323.woff2') format('woff2');font-weight:400;font-display:swap;}
+  @font-face{font-family:'Major Mono Display';src:url('fonts/major-mono.woff2') format('woff2');font-weight:400;font-display:swap;}
+  /* pixel CJK — scoped so the big JP file only loads when kana/kanji are shown */
+  @font-face{font-family:'DotGothic16';src:url('fonts/dotgothic16-jp.woff2') format('woff2');font-display:swap;
+    unicode-range:U+3000-303F,U+3040-30FF,U+FF00-FFEF,U+4E00-9FFF,U+3400-4DBF;}
+  @font-face{font-family:'DotGothic16';src:url('fonts/dotgothic16-latin.woff2') format('woff2');font-display:swap;
+    unicode-range:U+0000-00FF,U+2000-206F;}
+
   :root{
-    --lime:#a4bf55; --lime-dim:#6c8a3a; --bg:#0a0c09; --txt:#c4cbb5;
-    --line:rgba(164,191,85,.24); --line-soft:rgba(164,191,85,.10);
-    --panel:rgba(12,14,10,.92);
+    /* voyd defaults — overwritten per-palette by applyUITheme() at runtime */
+    --accent:#a4bf55; --accent-dim:#6c8a3a; --bg:#0a0c09; --txt:#c4cbb5;
+    --line:rgba(164,191,85,.26); --line-soft:rgba(164,191,85,.10);
+    --panel:rgba(10,12,9,.92); --btn-bg:#12160d;
+    --on-accent:#0a0c09; --on-dim:#0a0c09; --glow:rgba(164,191,85,.5);
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none;}
@@ -27,7 +42,7 @@
 
   #hint{
     position:fixed; top:calc(env(safe-area-inset-top) + 16px); left:0; right:0;
-    text-align:center; color:var(--lime); font-size:12px; letter-spacing:.08em;
+    text-align:center; color:var(--accent); font-size:12px; letter-spacing:.08em;
     text-shadow:0 1px 4px #000; pointer-events:none; transition:opacity .6s; z-index:5;
   }
   #hint.gone{ opacity:0;}
@@ -46,62 +61,62 @@
 
   #quick{ display:flex; gap:8px; align-items:center; padding:4px 12px 12px;}
   #quick .qbtn{
-    flex:0 0 auto; min-width:48px; height:46px;
+    flex:0 0 auto; min-width:46px; height:46px;
     display:flex; align-items:center; justify-content:center;
-    background:#11150d; color:var(--lime);
+    background:var(--btn-bg); color:var(--accent);
     border:1px solid var(--line); border-radius:10px; font-size:18px;
   }
-  #quick .qbtn:active{ background:var(--lime); color:var(--bg);}
-  #quick .qbtn.wide{ flex:1; font-size:12px; letter-spacing:.12em; text-transform:uppercase; gap:6px;}
-  #quick .qbtn.on{ background:var(--lime-dim); color:var(--bg);}
+  #quick .qbtn:active{ background:var(--accent); color:var(--on-accent);}
+  #quick .qbtn.wide{ flex:1; min-width:0; font-size:12px; letter-spacing:.12em; text-transform:uppercase; gap:6px;}
+  #quick .qbtn.on{ background:var(--accent-dim); color:var(--on-dim);}
 
   #full{ max-height:0; overflow:hidden; transition:max-height .28s ease;}
-  #sheet.open #full{ max-height:62vh; overflow-y:auto; overscroll-behavior:contain; touch-action:pan-y;}
+  #sheet.open #full{ max-height:64vh; overflow-y:auto; overscroll-behavior:contain; touch-action:pan-y;}
   #full .inner{ padding:2px 16px 18px;}
 
   .grp{ margin-top:14px;}
   .grp > .lbl{
-    color:var(--lime-dim); font-size:10px; letter-spacing:.22em; text-transform:uppercase;
+    color:var(--accent-dim); font-size:10px; letter-spacing:.22em; text-transform:uppercase;
     display:block; margin:0 0 9px; padding-bottom:5px; border-bottom:1px dotted var(--line-soft);
   }
   .row{ display:flex; align-items:center; gap:10px; margin:13px 0;}
   .row label{ flex:0 0 96px; font-size:12px; opacity:.9;}
-  .row .val{ flex:0 0 40px; text-align:right; color:var(--lime); font-size:12px;}
+  .row .val{ flex:0 0 40px; text-align:right; color:var(--accent); font-size:12px;}
   input[type=range]{
     flex:1; height:6px; -webkit-appearance:none; appearance:none;
-    background:var(--line); border-radius:3px; accent-color:var(--lime);
+    background:var(--line); border-radius:3px; accent-color:var(--accent);
   }
   input[type=range]::-webkit-slider-thumb{
     -webkit-appearance:none; width:24px; height:24px; border-radius:50%;
-    background:var(--lime); border:0; box-shadow:0 0 8px rgba(164,191,85,.5);
+    background:var(--accent); border:0; box-shadow:0 0 8px var(--glow);
   }
-  input[type=range]::-moz-range-thumb{ width:24px;height:24px;border:0;border-radius:50%;background:var(--lime);}
+  input[type=range]::-moz-range-thumb{ width:24px;height:24px;border:0;border-radius:50%;background:var(--accent);}
   select{
-    flex:1; background:#11150d; color:var(--txt);
+    flex:1; min-width:0; background:var(--btn-bg); color:var(--txt);
     border:1px solid var(--line); border-radius:8px;
     padding:11px 10px; font:inherit; font-size:13px;
   }
   .seg{ display:flex; flex:1; border:1px solid var(--line); border-radius:8px; overflow:hidden;}
   .seg button{
-    flex:1; background:#11150d; color:var(--txt); border:0; border-left:1px solid var(--line);
+    flex:1; background:var(--btn-bg); color:var(--txt); border:0; border-left:1px solid var(--line);
     padding:11px 4px; font:inherit; font-size:12px;
   }
   .seg button:first-child{ border-left:0;}
-  .seg button.on{ background:var(--lime); color:var(--bg);}
+  .seg button.on{ background:var(--accent); color:var(--on-accent);}
   .toggles{ display:flex; flex-wrap:wrap; gap:8px; margin-top:6px;}
   .tg{
     flex:1 1 calc(50% - 4px); min-height:46px;
     display:flex; align-items:center; justify-content:center; gap:8px;
-    background:#11150d; color:var(--txt);
+    background:var(--btn-bg); color:var(--txt);
     border:1px solid var(--line); border-radius:10px; font-size:12px;
   }
-  .tg.on{ background:var(--lime-dim); color:var(--bg); border-color:var(--lime);}
+  .tg.on{ background:var(--accent-dim); color:var(--on-dim); border-color:var(--accent);}
   .tg.disabled{ opacity:.35;}
 </style>
 </head>
 <body>
 <canvas id="screen"></canvas>
-<div id="hint">tap&nbsp;·&nbsp;vortex&nbsp;&nbsp;&nbsp;drag&nbsp;·&nbsp;stir</div>
+<div id="hint">tap&nbsp;·&nbsp;shape&nbsp;&nbsp;&nbsp;drag&nbsp;·&nbsp;stir&nbsp;&nbsp;&nbsp;multi-touch&nbsp;·&nbsp;tilt&nbsp;·&nbsp;gravity</div>
 
 <div id="sheet">
   <div id="grab"></div>
@@ -109,6 +124,7 @@
     <button class="qbtn" data-act="pause" id="qpause">❚❚</button>
     <button class="qbtn" data-act="reseed">⟳</button>
     <button class="qbtn" data-act="clear">⌫</button>
+    <button class="qbtn" data-act="gravity" id="qgrav" title="tilt / gravity">⏚</button>
     <button class="qbtn" data-act="fs">⛶</button>
     <button class="qbtn wide" id="expand">controls&nbsp;<span id="chev">▴</span></button>
   </div>
@@ -123,25 +139,10 @@
           <option value="vort">vorticity</option>
         </select>
       </div>
-      <div class="row"><label>palette</label>
-        <select id="theme">
-          <option value="voyd">voyd lime</option>
-          <option value="phosphor">phosphor</option>
-          <option value="amber">amber crt</option>
-          <option value="ice">ice</option>
-          <option value="magma">magma</option>
-          <option value="mono">mono</option>
-        </select>
-      </div>
-      <div class="row"><label>charset</label>
-        <select id="ramp">
-          <option value="detailed">detailed</option>
-          <option value="standard">standard</option>
-          <option value="minimal">minimal</option>
-          <option value="blocks">blocks ▒</option>
-          <option value="dots">dots •</option>
-        </select>
-      </div>
+      <div class="row"><label>palette</label><select id="theme"></select></div>
+      <div class="row"><label>charset</label><select id="ramp"></select></div>
+      <div class="row"><label>font</label><select id="font"></select></div>
+      <div class="row"><label>distortion</label><select id="brush"></select></div>
       <div class="row"><label>spin</label>
         <div class="seg" id="spinSeg">
           <button data-spin="auto" class="on">auto</button>
@@ -159,17 +160,19 @@
       <div class="row"><label>dye spread</label><input type="range" id="diff" min="0" max="100"><span class="val" id="diffV"></span></div>
       <div class="row"><label>persistence</label><input type="range" id="fade" min="90" max="100"><span class="val" id="fadeV"></span></div>
       <div class="row"><label>brush</label><input type="range" id="force" min="0" max="100"><span class="val" id="forceV"></span></div>
+      <div class="row"><label>gravity</label><input type="range" id="grav" min="0" max="100"><span class="val" id="gravV"></span></div>
     </div>
 
     <div class="grp">
       <span class="lbl">look &amp; seed</span>
       <div class="row"><label>detail</label><input type="range" id="detail" min="8" max="22"><span class="val" id="detailV"></span></div>
       <div class="row"><label>contrast</label><input type="range" id="gamma" min="30" max="140"><span class="val" id="gammaV"></span></div>
-      <div class="row"><label>vortices</label><input type="range" id="count" min="1" max="12"><span class="val" id="countV"></span></div>
+      <div class="row"><label>seeds</label><input type="range" id="count" min="1" max="12"><span class="val" id="countV"></span></div>
       <div class="toggles">
         <button class="tg on" id="auto">autopilot</button>
         <button class="tg" id="invert">invert</button>
         <button class="tg disabled" id="spinColor">spin colors</button>
+        <button class="tg" id="randomize">randomize ⚄</button>
         <button class="tg" id="reseed2">reseed</button>
       </div>
     </div>
@@ -225,11 +228,51 @@ class Fluid {
   densStep(dt){this.addSource(this.d,this.dSrc,dt);this.diffuse(0,this.d0,this.d,this.diff,dt);
     this.advect(0,this.d,this.d0,this.u,this.v,dt);const f=this.fade;for(let k=0;k<this.size;k++)this.d[k]*=f;}
   step(dt){this.velStep(dt);this.densStep(dt);if(this.eps<=0)this.computeCurl();this.clearSources();}
+
+  /* uniform body force (gravity / tilt) — added into the velocity sources this step */
+  addUniform(ax,ay){const{nx,ny,w}=this;for(let j=1;j<=ny;j++){const b=j*w;for(let i=1;i<=nx;i++){const d=b+i;this.uSrc[d]+=ax;this.vSrc[d]+=ay;}}}
+
+  /* ---- distortion injectors (all write velocity + dye directly) ---- */
   splatVortex(cx,cy,strength,radius,dye){const{nx,ny}=this;const r2=radius*radius;const rad=Math.ceil(radius*3);
     const ci=Math.round(cx),cj=Math.round(cy);
     for(let dj=-rad;dj<=rad;dj++)for(let di=-rad;di<=rad;di++){const i=ci+di,j=cj+dj;
       if(i<1||i>nx||j<1||j>ny)continue;const f=Math.exp(-(di*di+dj*dj)/(2*r2));const d=this.IX(i,j);
       this.u[d]+=-dj*strength*f;this.v[d]+=di*strength*f;this.d[d]+=dye*f;}}
+  splatBurst(cx,cy,strength,radius,dye){const{nx,ny}=this;const r2=radius*radius;const rad=Math.ceil(radius*3);
+    const ci=Math.round(cx),cj=Math.round(cy);
+    for(let dj=-rad;dj<=rad;dj++)for(let di=-rad;di<=rad;di++){const i=ci+di,j=cj+dj;
+      if(i<1||i>nx||j<1||j>ny)continue;const r=Math.hypot(di,dj)||1;const f=Math.exp(-(di*di+dj*dj)/(2*r2));const d=this.IX(i,j);
+      this.u[d]+=(di/r)*strength*f;this.v[d]+=(dj/r)*strength*f;this.d[d]+=dye*f;}}
+  splatJet(cx,cy,dx,dy,strength,radius,dye){const{nx,ny}=this;const r2=radius*radius;const rad=Math.ceil(radius*3);
+    const L=Math.hypot(dx,dy)||1;dx/=L;dy/=L;const ci=Math.round(cx),cj=Math.round(cy);
+    for(let dj=-rad;dj<=rad;dj++)for(let di=-rad;di<=rad;di++){const i=ci+di,j=cj+dj;
+      if(i<1||i>nx||j<1||j>ny)continue;const f=Math.exp(-(di*di+dj*dj)/(2*r2));const d=this.IX(i,j);
+      this.u[d]+=dx*strength*f;this.v[d]+=dy*strength*f;this.d[d]+=dye*f;}}
+  splatDipole(cx,cy,dx,dy,strength,radius,dye){const L=Math.hypot(dx,dy)||1;dx/=L;dy/=L;
+    const px=-dy,py=dx,off=radius*0.6;           // two counter-rotating cores propel a ring along (dx,dy)
+    this.splatVortex(cx+px*off,cy+py*off, strength,radius*0.8,dye*0.55);
+    this.splatVortex(cx-px*off,cy-py*off,-strength,radius*0.8,dye*0.55);
+    this.splatJet(cx,cy,dx,dy,strength*0.6,radius*0.7,dye*0.4);}
+  splatShock(cx,cy,strength,radius,dye){const{nx,ny}=this;const rad=Math.ceil(radius*2);const shell=radius*0.5;const ring=radius*0.6;
+    const ci=Math.round(cx),cj=Math.round(cy);
+    for(let dj=-rad;dj<=rad;dj++)for(let di=-rad;di<=rad;di++){const i=ci+di,j=cj+dj;
+      if(i<1||i>nx||j<1||j>ny)continue;const r=Math.hypot(di,dj)||1;
+      const f=Math.exp(-((r-ring)*(r-ring))/(2*shell*shell));const d=this.IX(i,j);
+      this.u[d]+=(di/r)*strength*f;this.v[d]+=(dj/r)*strength*f;this.d[d]+=dye*f*0.8;}}
+  splatTurb(cx,cy,strength,radius,dye){for(let k=0;k<6;k++){const a=Math.random()*Math.PI*2,rr=Math.random()*radius;
+    const x=cx+Math.cos(a)*rr,y=cy+Math.sin(a)*rr;
+    this.splatVortex(x,y,(Math.random()<0.5?-1:1)*strength*(0.5+Math.random()),radius*0.35,dye*0.5);}}
+  splatBloom(cx,cy,radius,dye){const{nx,ny}=this;const r2=radius*radius;const rad=Math.ceil(radius*3);
+    const ci=Math.round(cx),cj=Math.round(cy);
+    for(let dj=-rad;dj<=rad;dj++)for(let di=-rad;di<=rad;di++){const i=ci+di,j=cj+dj;
+      if(i<1||i>nx||j<1||j>ny)continue;const f=Math.exp(-(di*di+dj*dj)/(2*r2));this.d[this.IX(i,j)]+=dye*f;}}
+  splatShear(cx,cy,dx,dy,strength,radius,dye){const{nx,ny}=this;const r2=radius*radius;const rad=Math.ceil(radius*3);
+    const L=Math.hypot(dx,dy)||1;dx/=L;dy/=L;const px=-dy,py=dx;const ci=Math.round(cx),cj=Math.round(cy);
+    for(let dj=-rad;dj<=rad;dj++)for(let di=-rad;di<=rad;di++){const i=ci+di,j=cj+dj;
+      if(i<1||i>nx||j<1||j>ny)continue;const f=Math.exp(-(di*di+dj*dj)/(2*r2));const d=this.IX(i,j);
+      const s=(di*px+dj*py)>=0?1:-1;               // opposite drift either side of the axis -> rolls up
+      this.u[d]+=dx*strength*s*f;this.v[d]+=dy*strength*s*f;this.d[d]+=dye*f;}}
+
   addForce(i,j,fx,fy,dye,brush){const{nx,ny}=this;
     for(let dj=-brush;dj<=brush;dj++)for(let di=-brush;di<=brush;di++){const x=i+di,y=j+dj;
       if(x<1||x>nx||y<1||y>ny)continue;const f=Math.exp(-(di*di+dj*dj)/(2*brush*brush+0.1));const d=this.IX(x,y);
@@ -237,42 +280,137 @@ class Fluid {
 }
 
 /* ===== 2. PALETTES ===== */
+/* built-in signature + classic palettes (normalized to {name,group,bg,bands,accent,stops}) */
 const THEMES={
-  voyd:{bg:'#0a0c09',stops:[[0,[44,52,33]],[0.45,[108,134,58]],[0.78,[164,191,85]],[1,[214,226,162]]]},
-  phosphor:{bg:'#000300',stops:[[0,[0,40,16]],[0.5,[0,200,90]],[1,[190,255,200]]]},
-  amber:{bg:'#0a0600',stops:[[0,[40,22,0]],[0.5,[230,150,0]],[1,[255,236,172]]]},
-  ice:{bg:'#00060c',stops:[[0,[0,30,46]],[0.45,[20,120,190]],[0.8,[60,190,255]],[1,[208,244,255]]]},
-  magma:{bg:'#0a0003',stops:[[0,[20,0,8]],[0.35,[150,20,10]],[0.62,[255,90,0]],[0.82,[255,200,0]],[1,[255,255,235]]]},
-  mono:{bg:'#000000',stops:[[0,[40,40,40]],[1,[245,245,245]]]},
+  voyd:{name:'voyd lime',group:'signature',bg:'#0a0c09',bands:0,accent:[164,191,85],stops:[[0,[44,52,33]],[0.45,[108,134,58]],[0.78,[164,191,85]],[1,[214,226,162]]]},
+  phosphor:{name:'phosphor',group:'classic',bg:'#000300',bands:0,accent:[80,222,128],stops:[[0,[0,40,16]],[0.5,[0,200,90]],[1,[190,255,200]]]},
+  amber:{name:'amber crt',group:'classic',bg:'#0a0600',bands:0,accent:[255,176,0],stops:[[0,[40,22,0]],[0.5,[230,150,0]],[1,[255,236,172]]]},
+  ice:{name:'ice',group:'classic',bg:'#00060c',bands:0,accent:[86,196,255],stops:[[0,[0,30,46]],[0.45,[20,120,190]],[0.8,[60,190,255]],[1,[208,244,255]]]},
+  magma:{name:'magma',group:'classic',bg:'#0a0003',bands:0,accent:[255,120,40],stops:[[0,[20,0,8]],[0.35,[150,20,10]],[0.62,[255,90,0]],[0.82,[255,200,0]],[1,[255,255,235]]]},
+  mono:{name:'mono',group:'classic',bg:'#000000',bands:0,accent:[228,228,228],stops:[[0,[40,40,40]],[1,[245,245,245]]]},
 };
+
+/* ---- generated retro palettes (from research workflow) ---- */
+const GEN_THEMES={
+  c64:{name:"Commodore 64 (Pepto)",group:"retro computing",bg:'#0b0b28',bands:4,accent:[108,94,181],stops:[[0,[53,40,121]],[0.4,[111,61,134]],[0.75,[108,94,181]],[1,[255,255,255]]]},
+  pet:{name:"Commodore PET Phosphor",group:"retro computing",bg:'#04140a',bands:0,accent:[72,246,80],stops:[[0,[0,36,12]],[0.4,[0,132,36]],[0.75,[40,210,72]],[1,[72,246,80]]]},
+  zx:{name:"ZX Spectrum Bright",group:"retro computing",bg:'#07000f',bands:5,accent:[255,0,255],stops:[[0,[0,0,215]],[0.28,[255,0,255]],[0.55,[255,0,0]],[0.8,[255,255,0]],[1,[255,255,255]]]},
+  a2green:{name:"Apple II Green",group:"retro computing",bg:'#001400',bands:0,accent:[51,255,51],stops:[[0,[0,32,0]],[0.4,[0,128,16]],[0.72,[40,220,40]],[1,[51,255,51]]]},
+  a2amber:{name:"Apple II Amber",group:"retro computing",bg:'#160a00',bands:0,accent:[255,176,0],stops:[[0,[36,16,0]],[0.4,[140,66,0]],[0.72,[224,140,0]],[1,[255,176,0]]]},
+  cgahi:{name:"CGA Cyan / Magenta",group:"retro computing",bg:'#02090b',bands:4,accent:[255,85,255],stops:[[0,[0,64,64]],[0.33,[85,255,255]],[0.66,[255,85,255]],[1,[255,255,255]]]},
+  cga0:{name:"CGA Green / Red / Yellow",group:"retro computing",bg:'#0a0600',bands:4,accent:[255,255,85],stops:[[0,[20,50,0]],[0.33,[85,255,85]],[0.66,[255,85,85]],[1,[255,255,85]]]},
+  ega:{name:"EGA 16",group:"retro computing",bg:'#05050f',bands:6,accent:[85,255,255],stops:[[0,[0,0,170]],[0.2,[170,0,170]],[0.4,[255,85,85]],[0.6,[255,255,85]],[0.8,[85,255,85]],[1,[255,255,255]]]},
+  amiga:{name:"Amiga Workbench 1.x",group:"retro computing",bg:'#000022',bands:4,accent:[255,136,0],stops:[[0,[0,54,108]],[0.4,[0,85,170]],[0.72,[255,136,0]],[1,[255,255,255]]]},
+  atari:{name:"Atari 8-bit Blue",group:"retro computing",bg:'#04102a',bands:5,accent:[58,110,200],stops:[[0,[18,44,104]],[0.35,[58,110,200]],[0.7,[110,158,232]],[1,[200,224,255]]]},
+  msx:{name:"MSX1 TMS9918",group:"retro computing",bg:'#080a06',bands:5,accent:[252,85,84],stops:[[0,[33,176,59]],[0.25,[33,200,66]],[0.5,[212,193,84]],[0.75,[252,85,84]],[1,[255,255,255]]]},
+  hercamber:{name:"Hercules Amber",group:"retro computing",bg:'#180800',bands:0,accent:[255,153,0],stops:[[0,[40,14,0]],[0.4,[150,58,0]],[0.72,[232,116,0]],[1,[255,153,0]]]},
+  hercgreen:{name:"Hercules Green (P1)",group:"retro computing",bg:'#011a08',bands:0,accent:[120,255,120],stops:[[0,[0,40,16]],[0.4,[16,150,60]],[0.72,[72,232,110]],[1,[120,255,120]]]},
+  vt220:{name:"DEC VT220 White",group:"retro computing",bg:'#0a0b0e',bands:0,accent:[238,240,252],stops:[[0,[28,30,36]],[0.4,[104,108,120]],[0.72,[182,186,198]],[1,[238,240,252]]]},
+  teletext:{name:"Teletext / Ceefax",group:"retro computing",bg:'#040406',bands:6,accent:[0,255,255],stops:[[0,[0,0,255]],[0.2,[255,0,0]],[0.4,[255,0,255]],[0.6,[0,255,255]],[0.8,[255,255,0]],[1,[255,255,255]]]},
+  gbdmg:{name:"Game Boy DMG · Pea Soup",group:"retro gaming",bg:'#081c08',bands:4,accent:[155,188,15],stops:[[0,[15,56,15]],[0.42,[48,98,48]],[0.78,[139,172,15]],[1,[155,188,15]]]},
+  gbpocket:{name:"Game Boy Pocket · Ash Grey",group:"retro gaming",bg:'#16150f',bands:4,accent:[224,219,205],stops:[[0,[43,43,38]],[0.42,[112,107,102]],[0.78,[168,159,148]],[1,[224,219,205]]]},
+  gblight:{name:"Game Boy Light · Backlit Teal",group:"retro gaming",bg:'#071a14',bands:4,accent:[170,226,196],stops:[[0,[13,44,36]],[0.42,[42,98,82]],[0.78,[108,190,156]],[1,[170,226,196]]]},
+  gbcolor:{name:"Game Boy Color · Prism",group:"retro gaming",bg:'#0c0a2a',bands:0,accent:[22,181,138],stops:[[0,[27,20,100]],[0.3,[43,95,217]],[0.55,[22,181,138]],[0.78,[143,212,42]],[1,[247,224,74]]]},
+  nes:{name:"NES · Sky & Cloud",group:"retro gaming",bg:'#050a24',bands:0,accent:[60,188,252],stops:[[0,[0,35,124]],[0.32,[0,0,252]],[0.62,[60,188,252]],[0.85,[164,228,252]],[1,[252,252,252]]]},
+  sms:{name:"Master System · Violet Grid",group:"retro gaming",bg:'#0a0016',bands:0,accent:[170,0,255],stops:[[0,[0,0,170]],[0.32,[85,0,170]],[0.6,[170,0,255]],[0.82,[255,85,255]],[1,[255,170,255]]]},
+  vboy:{name:"Virtual Boy · Red Mirage",group:"retro gaming",bg:'#140000',bands:4,accent:[255,0,0],stops:[[0,[48,0,0]],[0.28,[99,0,0]],[0.55,[135,0,0]],[0.8,[183,0,13]],[1,[255,0,0]]]},
+  pico8:{name:"PICO-8 · Midnight Cherry",group:"retro gaming",bg:'#0d1024',bands:5,accent:[255,0,77],stops:[[0,[29,43,83]],[0.35,[126,37,83]],[0.62,[255,0,77]],[0.84,[255,119,168]],[1,[255,204,170]]]},
+  neogeo:{name:"Neo Geo · Pro-Gear Gold",group:"retro gaming",bg:'#14060a',bands:0,accent:[255,59,59],stops:[[0,[42,10,18]],[0.35,[183,18,52]],[0.62,[255,59,59]],[0.83,[255,138,31]],[1,[255,210,74]]]},
+  wonderswan:{name:"WonderSwan · Mono Fog",group:"retro gaming",bg:'#0e100d',bands:8,accent:[228,232,214],stops:[[0,[22,26,22]],[0.32,[66,74,64]],[0.6,[120,128,112]],[0.82,[176,182,164]],[1,[228,232,214]]]},
+  outrun:{name:"Outrun Sunset",group:"80s neon",bg:'#150826',bands:0,accent:[255,41,117],stops:[[0,[30,11,61]],[0.28,[140,30,255]],[0.5,[242,34,255]],[0.68,[255,41,117]],[0.85,[255,144,31]],[1,[255,211,25]]]},
+  vapor:{name:"Vaporwave Dream",group:"80s neon",bg:'#1c0f30',bands:0,accent:[255,113,206],stops:[[0,[48,3,80]],[0.28,[185,103,255]],[0.5,[255,113,206]],[0.7,[1,205,254]],[0.88,[5,255,161]],[1,[255,251,150]]]},
+  miami:{name:"Miami Vice",group:"80s neon",bg:'#04191c',bands:0,accent:[255,110,199],stops:[[0,[4,28,32]],[0.3,[0,128,128]],[0.55,[11,210,211]],[0.8,[255,110,199]],[1,[249,144,232]]]},
+  tron:{name:"Tron Grid",group:"80s neon",bg:'#010208',bands:0,accent:[14,248,248],stops:[[0,[1,4,9]],[0.35,[7,45,145]],[0.6,[4,148,148]],[0.82,[14,248,248]],[1,[186,255,255]]]},
+  tokyo:{name:"Neon Tokyo",group:"80s neon",bg:'#060713',bands:0,accent:[234,0,217],stops:[[0,[9,24,51]],[0.32,[19,62,124]],[0.58,[113,28,145]],[0.8,[234,0,217]],[1,[10,189,198]]]},
+  blade:{name:"Blade Runner Smog",group:"80s neon",bg:'#08100f',bands:0,accent:[255,146,74],stops:[[0,[11,26,28]],[0.3,[31,107,107]],[0.55,[0,221,209]],[0.78,[255,146,74]],[1,[255,191,77]]]},
+  cyber:{name:"Cyberpunk 2077",group:"80s neon",bg:'#0a0810',bands:0,accent:[252,238,12],stops:[[0,[13,11,22]],[0.28,[237,30,121]],[0.55,[2,215,242]],[1,[252,238,12]]]},
+  hotline:{name:"Hotline Miami",group:"80s neon",bg:'#16082b',bands:0,accent:[247,101,184],stops:[[0,[42,10,61]],[0.3,[123,45,142]],[0.55,[247,101,184]],[0.8,[39,253,245]],[1,[168,246,248]]]},
+  termhud:{name:"Terminator Vision",group:"80s neon",bg:'#0d0000',bands:0,accent:[255,26,10],stops:[[0,[24,0,0]],[0.3,[92,0,0]],[0.55,[176,0,0]],[0.8,[255,26,10]],[1,[255,122,69]]]},
+  radar:{name:"Motion Tracker",group:"80s neon",bg:'#001505',bands:0,accent:[51,255,51],stops:[[0,[2,26,6]],[0.3,[10,92,26]],[0.55,[20,168,44]],[0.8,[51,255,51]],[1,[186,255,176]]]},
+  cgahi2:{name:"CGA Hi-Intensity",group:"80s neon",bg:'#050308',bands:4,accent:[255,85,255],stops:[[0,[0,0,0]],[0.33,[255,85,255]],[0.66,[85,255,255]],[1,[255,255,255]]]},
+};
+Object.assign(THEMES,GEN_THEMES);
+
 const SPIN_STOPS=[[-1,[60,200,255]],[-0.4,[20,80,120]],[-0.05,[16,20,14]],[0.05,[22,16,14]],[0.4,[150,60,20]],[1,[255,140,40]]];
 function lerpStops(s,t){if(t<=s[0][0])return s[0][1];if(t>=s[s.length-1][0])return s[s.length-1][1];
   for(let k=0;k<s.length-1;k++){const a=s[k],b=s[k+1];if(t>=a[0]&&t<=b[0]){const f=(t-a[0])/(b[0]-a[0]);
     return[a[1][0]+(b[1][0]-a[1][0])*f,a[1][1]+(b[1][1]-a[1][1])*f,a[1][2]+(b[1][2]-a[1][2])*f];}}return s[s.length-1][1];}
-function buildLUT(stops,signed){const lut=new Array(256);for(let k=0;k<256;k++){const t=signed?(k/255)*2-1:k/255;
+function buildLUT(stops,signed,bands){const lut=new Array(256);for(let k=0;k<256;k++){let t=signed?(k/255)*2-1:k/255;
+  if(!signed&&bands&&bands>1){t=Math.round(t*(bands-1))/(bands-1);}       // hard-quantize into flat colour bands
   const c=lerpStops(stops,t);lut[k]=`rgb(${c[0]|0},${c[1]|0},${c[2]|0})`;}return lut;}
 
+/* ===== 2b. CHARSETS ===== */
 const RAMPS={
-  detailed:" .'`^\",:;Il!i><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$",
-  standard:" .:-=+*#%@",
-  minimal:" .\u00b7:+#",
-  blocks:" \u2591\u2592\u2593\u2588",
-  dots:" .\u00b7\u2022\u25cf\u2588",
+  detailed:{name:'detailed',group:'ascii',cjk:false,chars:" .'`^\",:;Il!i><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$"},
+  standard:{name:'standard',group:'ascii',cjk:false,chars:" .:-=+*#%@"},
+  minimal:{name:'minimal',group:'ascii',cjk:false,chars:" .·:+#"},
+  blocks:{name:'blocks',group:'blocks',cjk:false,chars:" ░▒▓█"},
+  dots:{name:'dots',group:'blocks',cjk:false,chars:" .·•●█"},
+  braille:{name:'braille',group:'blocks',cjk:false,chars:" ⠁⠃⠇⠏⠟⠿⢿⣿"},
+};
+
+/* ---- generated charset ramps (from research workflow) ---- */
+const GEN_RAMPS={
+  kanji100:{name:"kanji ×100",group:"CJK",cjk:true,chars:"　一乙二十人力三山川千土水火木天日石白田生玉竹糸虫気光花車見赤谷雨金青空林波音風星春海桜島夏家原雪魚鳥黒菜森雲晴湖港景電楽新園雷銀語読歌緑線影熱潮舞頭橋樹薬霜優環闇曜顔観難願鏡霧麗響競護露魔鶴驚籠鑑鱗鷹"},
+  halfKana:{name:"half-width kana",group:"kana",cjk:false,chars:" ﾟﾞ｡･､ｰﾉﾍｲｼﾄｿｸﾆｺｵｱｹｷｶﾁﾃﾅｻｾﾀﾔﾕﾖﾗﾘﾙﾚﾛﾏﾐﾂﾑﾒﾓﾜﾊﾋﾌﾎﾈﾝ"},
+  katakana:{name:"katakana",group:"kana",cjk:true,chars:"　ノヘシイソートニハクケアオカサタチテナラリルレロヤユヨワンツミムメモマネホヲヌ"},
+  hiragana:{name:"hiragana",group:"kana",cjk:true,chars:"　へしくつてこりいろのんえおかさたなにはひふやゆよらるれをあぬねむめもまほわ"},
+  matrixKana:{name:"matrix rain",group:"kana",cjk:false,chars:" 1ﾉ7ﾍｼｲ4ﾄ2ﾆｸ3ｺｱ5ﾗﾘﾔ6ﾏ9ﾑﾒﾂﾈ0ﾎ8ﾝ"},
+  numbers:{name:"digits",group:"digits",cjk:false,chars:" 1742356908"},
+  hexdigits:{name:"hex digits",group:"digits",cjk:false,chars:" 17FC4235EA69D0B8"},
+  symbols:{name:"symbols",group:"ascii",cjk:false,chars:" .'`,:;!~-_^\"+=<>?/\\|()[]{}*%&$#@"},
+  dingbats:{name:"stars & dingbats",group:"symbols",cjk:false,chars:" ✧✦✩✫✬✭★✮✯✶✷✸✹❀✿❁❂❋"},
+  arrows:{name:"arrows",group:"symbols",cjk:false,chars:" ↑→↓←↔↕⇑⇒⇓⇐➔➙➜➞➟➠➡➢➤"},
+  math:{name:"math",group:"symbols",cjk:false,chars:" ·∘−+±=≈≠÷×≤≥√∫∂∇∆∈∑∏⊕⊗∞⊠∎"},
+  boxLines:{name:"box & block",group:"blocks",cjk:false,chars:" ┈┄╌─│┼═╬━┃╋▁▂▃▄▅▆▇█"},
+  runic:{name:"elder futhark",group:"script",cjk:false,chars:" ᛁᚲᛚᚢᚷᛏᚠᚨᚦᚱᚹᚾᛃᛉᛊᚺᛖᛒᛜᛞᛟᛗ"},
+};
+Object.assign(RAMPS,GEN_RAMPS);
+
+/* ===== 2c. FONTS + DISTORTION BRUSHES ===== */
+const CJK_FALLBACK=', "DotGothic16", "Noto Sans CJK JP", "Noto Sans Mono CJK JP", monospace';
+const FONTS={
+  system:{name:'system mono',css:'ui-monospace,"SFMono-Regular",Menlo,Consolas'},
+  jetbrains:{name:'JetBrains Mono',css:'"JetBrains Mono"'},
+  plex:{name:'IBM Plex Mono',css:'"IBM Plex Mono"'},
+  space:{name:'Space Mono',css:'"Space Mono"'},
+  sharetech:{name:'Share Tech Mono',css:'"Share Tech Mono"'},
+  vt323:{name:'VT323 · CRT',css:'"VT323"'},
+  major:{name:'Major Mono',css:'"Major Mono Display"'},
+  dot:{name:'DotGothic16 · pixel',css:'"DotGothic16"'},
+};
+const BRUSHES={
+  vortex:'vortex ↻', burst:'burst ✷', implode:'implode ✸', jet:'jet ➤',
+  dipole:'dipole ⇄', shock:'shockwave ◎', turbulence:'turbulence ≋',
+  bloom:'ink bloom ⬤', shear:'shear ⇅',
 };
 
 /* ===== 3. STATE ===== */
 const state={
   field:'dye', spinColor:false, spinMode:'auto',
-  theme:'voyd', ramp:'detailed', invert:false,
+  theme:'voyd', ramp:'detailed', font:'system', brush:'vortex', invert:false,
   detail:12, gamma:0.72,
-  speed:33, vort:60, visc:12, diff:8, fade:99, force:50,
-  count:5, auto:true, paused:false,
+  speed:33, vort:60, visc:12, diff:8, fade:99, force:50, grav:50,
+  count:5, auto:true, paused:false, gravity:false,
 };
+
+/* ---- persistence ---- */
+const SKEY='asciifluid.v2';
+let savedState=null;
+try{ savedState=JSON.parse(localStorage.getItem(SKEY)); }catch(e){}
+if(savedState&&typeof savedState==='object'){ delete savedState.paused; delete savedState.gravity; Object.assign(state,savedState); }
+// guard against stale keys from an older build
+if(!THEMES[state.theme]) state.theme='voyd';
+if(!RAMPS[state.ramp]) state.ramp='detailed';
+if(!FONTS[state.font]) state.font='system';
+if(!BRUSHES[state.brush]) state.brush='vortex';
+let persistT;
+function persist(){ clearTimeout(persistT); persistT=setTimeout(()=>{ try{ const s=Object.assign({},state); delete s.paused; delete s.gravity; localStorage.setItem(SKEY,JSON.stringify(s)); }catch(e){} },400); }
 
 const cv=document.getElementById('screen');
 const ctx=cv.getContext('2d',{alpha:false});
 let fluid=null, cols=0, rows=0, cell=12, offX=0, offY=0, dpr=1;
-let lut=buildLUT(THEMES.voyd.stops,false), bgColor=THEMES.voyd.bg;
+let lut=buildLUT(THEMES.voyd.stops,false,0), bgColor=THEMES.voyd.bg;
 let runMax=1e-3;
 const parity={s:1};
 
@@ -284,11 +422,48 @@ function applyParams(){
 }
 function dtVal(){ return 0.02+(state.speed/100)*0.28; }
 function forceScale(){ return (state.force/100)*60; }
+function fontFamily(){ return (FONTS[state.font]||FONTS.system).css + CJK_FALLBACK; }
+
+/* ---- derive a full, legible UI palette from the active fluid theme ---- */
+function hexRGB(h){ h=h.replace('#',''); if(h.length===3)h=h.replace(/(.)/g,'$1$1');
+  const n=parseInt(h,16); return [(n>>16)&255,(n>>8)&255,n&255]; }
+function mix(a,b,t){ return [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t]; }
+function rgbCss(c){ return `rgb(${c[0]|0},${c[1]|0},${c[2]|0})`; }
+function rgbaCss(c,a){ return `rgba(${c[0]|0},${c[1]|0},${c[2]|0},${a})`; }
+/* WCAG relative luminance */
+function relLum(c){ const f=x=>{ x/=255; return x<=0.03928? x/12.92 : Math.pow((x+0.055)/1.055,2.4); };
+  return 0.2126*f(c[0])+0.7152*f(c[1])+0.0722*f(c[2]); }
+/* lighten toward white until luminance clears a floor — keeps dim accents readable on the dark panel */
+function raiseLum(c,minL){ let o=c; for(let k=0;k<40 && relLum(o)<minL;k++) o=mix(o,[255,255,255],0.08); return o; }
+/* max-contrast ink for text sitting on `bg`: the palette's near-black, or near-white */
+function inkOn(bg,dark){ return relLum(bg)>0.179 ? dark : [240,240,236]; }
+
+function applyUITheme(theme){
+  const bg=hexRGB(theme.bg);
+  const accent=theme.accent||theme.stops[theme.stops.length-2][1];
+  const dim=raiseLum(mix(accent,bg,0.40),0.22);   // muted accent, floored to stay legible on the panel
+  const txt=mix(accent,[255,255,255],0.72);        // light, on-theme body text
+  const btn=mix(bg,accent,0.09);                   // dark control fill with a hint of the hue
+  const R=document.documentElement.style;
+  R.setProperty('--accent',rgbCss(accent));
+  R.setProperty('--accent-dim',rgbCss(dim));
+  R.setProperty('--bg',rgbCss(bg));
+  R.setProperty('--txt',rgbCss(txt));
+  R.setProperty('--btn-bg',rgbCss(btn));
+  R.setProperty('--panel',rgbaCss(bg,0.92));
+  R.setProperty('--line',rgbaCss(accent,0.26));
+  R.setProperty('--line-soft',rgbaCss(accent,0.10));
+  R.setProperty('--glow',rgbaCss(accent,0.5));
+  R.setProperty('--on-accent',rgbCss(inkOn(accent,bg)));
+  R.setProperty('--on-dim',rgbCss(inkOn(dim,bg)));
+}
 
 function rebuildColors(){
-  bgColor=THEMES[state.theme].bg;
+  const th=THEMES[state.theme];
+  bgColor=th.bg;
+  applyUITheme(th);
   const useSpin=state.spinColor && state.field==='vort';
-  lut=useSpin?buildLUT(SPIN_STOPS,true):buildLUT(THEMES[state.theme].stops,false);
+  lut=useSpin?buildLUT(SPIN_STOPS,true,0):buildLUT(th.stops,false,th.bands||0);
   document.body.style.background=bgColor;
   document.querySelector('meta[name=theme-color]').setAttribute('content',bgColor);
 }
@@ -315,15 +490,34 @@ function layout(){
   else if(fluid.nx!==cols||fluid.ny!==rows){ fluid.resize(cols,rows); applyParams(); reseed(); }
 }
 
+/* ---- brush dispatch: turn a point into the selected distortion ---- */
+function brushDir(){ const a=Math.random()*Math.PI*2; return {x:Math.cos(a),y:Math.sin(a)}; }
+function applyBrush(kind,i,j,spin,scale){
+  scale=scale||1;
+  const rad=Math.min(Math.max(Math.min(cols,rows)*0.07,3),11)*scale;
+  const S=1.15*scale, dye=1.2, f=fluid;
+  switch(kind){
+    case 'burst':      f.splatBurst(i,j, S*0.9, rad, dye); break;
+    case 'implode':    f.splatBurst(i,j,-S*0.9, rad, dye*0.6); break;
+    case 'jet':      { const d=brushDir(); f.splatJet(i,j,d.x,d.y, S*1.4, rad, dye); break; }
+    case 'dipole':   { const d=brushDir(); f.splatDipole(i,j,d.x,d.y, S*1.2, rad, dye); break; }
+    case 'shock':      f.splatShock(i,j, S*1.3, rad*1.4, dye); break;
+    case 'turbulence': f.splatTurb(i,j, S, rad*1.3, dye*0.8); break;
+    case 'bloom':      f.splatBloom(i,j, rad*1.15, dye*1.3); break;
+    case 'shear':    { const d=brushDir(); f.splatShear(i,j,d.x,d.y, S*1.1, rad*1.2, dye); break; }
+    case 'vortex':
+    default:           f.splatVortex(i,j, spin*S, rad, dye);
+  }
+}
+
 function reseed(){
   fluid.clearAll(); runMax=1e-3;
   const n=state.count;
-  const rad=Math.min(Math.max(Math.min(cols,rows)*0.09,3),14);
   for(let k=0;k<n;k++){
     const a=(k/n)*Math.PI*2, jit=(Math.random()*2-1);
     const cx=cols*(0.5+0.36*Math.cos(a))+jit*cols*0.05;
     const cy=rows*(0.5+0.36*Math.sin(a))+jit*rows*0.05;
-    fluid.splatVortex(cx,cy,(k%2?-1:1)*0.95,rad,1.0);
+    applyBrush(state.brush, cx, cy, (k%2?-1:1), 1);
   }
 }
 
@@ -343,12 +537,12 @@ function draw(){
   ctx.setTransform(dpr,0,0,dpr,0,0);
   ctx.fillStyle=bgColor; ctx.fillRect(0,0,cv.width,cv.height);
   const f=fluid,W=f.w;
-  const ramp=RAMPS[state.ramp], rmax=ramp.length-1;
+  const R=RAMPS[state.ramp], ramp=R.chars, rmax=ramp.length-1;
   const inv=state.invert, gamma=state.gamma;
   const useSpin=state.spinColor && state.field==='vort';
   const fld=state.field, inorm=1/runMax;
-  const fpx=Math.max(6,Math.round(cell*1.35));
-  ctx.font=fpx+'px ui-monospace,Menlo,Consolas,monospace';
+  const fpx=Math.max(6,Math.round(cell*(R.cjk?1.02:1.35)));
+  ctx.font=fpx+'px '+fontFamily();
   ctx.textAlign='center'; ctx.textBaseline='middle';
   const half=cell*0.5; let cur='';
   for(let j=1;j<=rows;j++){
@@ -361,7 +555,7 @@ function draw(){
       let v=raw*inorm; if(v>1)v=1; else if(v<0)v=0; v=Math.pow(v,gamma);
       const vv=inv?1-v:v;
       const ch=ramp[(vv*rmax)|0];
-      if(ch===' ') continue;
+      if(ch===' '||ch==='　') continue;
       let li;
       if(useSpin){ let s=signed*inorm; if(s>1)s=1; else if(s<-1)s=-1;
         const mag=Math.pow(Math.abs(s),gamma)*Math.sign(s); li=((mag*0.5+0.5)*255)|0; }
@@ -373,8 +567,8 @@ function draw(){
   }
 }
 
-/* ===== 4. TOUCH INTERACTION (tap = vortex, drag = stir) ===== */
-let dragging=false, moved=false, downXY=null, downCell=null, lastCell=null;
+/* ===== 4. TOUCH INTERACTION — multi-touch (tap = distortion, drag = stir) ===== */
+const pointers=new Map();
 const MOVE_THRESH=10;
 function toCell(px,py){
   return {
@@ -389,30 +583,55 @@ function nextSpin(){
 }
 cv.addEventListener('pointerdown',e=>{
   cv.setPointerCapture(e.pointerId);
-  dragging=true; moved=false;
-  downXY={x:e.clientX,y:e.clientY};
-  downCell=toCell(e.clientX,e.clientY); lastCell=downCell;
+  const c=toCell(e.clientX,e.clientY);
+  pointers.set(e.pointerId,{downXY:{x:e.clientX,y:e.clientY}, downCell:c, lastCell:c, moved:false});
   dismissHint();
 });
 cv.addEventListener('pointermove',e=>{
-  if(!dragging) return;
-  if(!moved && Math.abs(e.clientX-downXY.x)+Math.abs(e.clientY-downXY.y)>MOVE_THRESH) moved=true;
-  if(moved){
+  const p=pointers.get(e.pointerId); if(!p) return;
+  if(!p.moved && Math.abs(e.clientX-p.downXY.x)+Math.abs(e.clientY-p.downXY.y)>MOVE_THRESH) p.moved=true;
+  if(p.moved){
     const c=toCell(e.clientX,e.clientY);
-    const di=c.i-lastCell.i, dj=c.j-lastCell.j, fs=forceScale();
+    const di=c.i-p.lastCell.i, dj=c.j-p.lastCell.j, fs=forceScale();
     fluid.addForce(c.i,c.j, di*fs, dj*fs, 16, 2);
-    lastCell=c;
+    p.lastCell=c;
   }
 });
-function endTap(){
-  if(!dragging) return; dragging=false;
-  if(!moved && downCell){
-    const rad=Math.min(Math.max(Math.min(cols,rows)*0.07,3),11);
-    fluid.splatVortex(downCell.i,downCell.j, nextSpin()*1.15, rad, 1.2);
-  }
+function endPtr(e){
+  const p=pointers.get(e.pointerId); if(!p) return;
+  pointers.delete(e.pointerId);
+  if(!p.moved){ applyBrush(state.brush, p.downCell.i, p.downCell.j, nextSpin(), 1); }
 }
-cv.addEventListener('pointerup',endTap);
-cv.addEventListener('pointercancel',endTap);
+cv.addEventListener('pointerup',endPtr);
+cv.addEventListener('pointercancel',endPtr);
+
+/* ===== 4b. GRAVITY / TILT ===== */
+let gvx=0, gvy=0, gBaseBeta=null, gBaseGamma=null;
+const GRAV=4;                                 // base body-force scale
+function onOrient(e){
+  if(e.beta==null||e.gamma==null) return;
+  if(gBaseBeta==null){ gBaseBeta=e.beta; gBaseGamma=e.gamma; }  // calibrate to the pose gravity was enabled in
+  let db=e.beta-gBaseBeta, dg=e.gamma-gBaseGamma;
+  if(db>180)db-=360; else if(db<-180)db+=360;
+  let gx=Math.sin(dg*Math.PI/180), gy=Math.sin(db*Math.PI/180); // downhill direction in the device frame
+  const ang=((screen.orientation&&screen.orientation.angle)||window.orientation||0)*Math.PI/180;
+  const ca=Math.cos(ang), sa=Math.sin(ang);   // rotate device axes into the (possibly rotated) screen frame
+  gvx=gx*ca + gy*sa;
+  gvy=-gx*sa + gy*ca;
+}
+function addOrient(){ window.addEventListener('deviceorientation',onOrient,true); }
+function removeOrient(){ window.removeEventListener('deviceorientation',onOrient,true); gvx=gvy=0; gBaseBeta=gBaseGamma=null; }
+function enableGravity(){
+  const D=window.DeviceOrientationEvent;
+  if(D && typeof D.requestPermission==='function'){   // iOS 13+ gated behind a user gesture
+    D.requestPermission().then(s=>{ if(s==='granted') addOrient(); else setGravity(false); }).catch(()=>setGravity(false));
+  } else { addOrient(); }
+}
+function setGravity(on){
+  state.gravity=on;
+  const b=$('qgrav'); if(b) b.classList.toggle('on',on);
+  if(on){ gBaseBeta=gBaseGamma=null; enableGravity(); } else { removeOrient(); }
+}
 
 /* ===== 5. AUTOPILOT ===== */
 let autoAcc=0;
@@ -422,8 +641,7 @@ function autopilot(realDt){
   if(autoAcc>=2.2){
     autoAcc=0;
     const cx=2+Math.random()*(cols-4), cy=2+Math.random()*(rows-4);
-    const rad=Math.min(Math.max(Math.min(cols,rows)*0.06,3),9);
-    fluid.splatVortex(cx,cy,(Math.random()<0.5?-1:1)*0.5,rad,0.7);
+    applyBrush(state.brush, cx, cy, (Math.random()<0.5?-1:1), 0.7);
   }
 }
 
@@ -435,15 +653,43 @@ function frame(now){
   const el=now-last; last=now; acc+=el;
   if(acc<STEP) return;
   acc=Math.min(acc-STEP,STEP);
-  if(!state.paused){ autopilot(STEP/1000); fluid.step(dtVal()); }
+  if(!state.paused){
+    autopilot(STEP/1000);
+    if(state.gravity){ const g=(state.grav/100)*GRAV; fluid.addUniform(gvx*g, gvy*g); }
+    fluid.step(dtVal());
+  }
   scanMax(); draw();
 }
 
 /* ===== 7. CONTROLS ===== */
 const $=id=>document.getElementById(id);
+
+/* build grouped <select> from a data map */
+function fillSelect(sel, entries, order, cur){
+  const byGroup={};
+  for(const k in entries){ const g=entries[k].group||'other'; (byGroup[g]=byGroup[g]||[]).push(k); }
+  const groups=order.filter(g=>byGroup[g]).concat(Object.keys(byGroup).filter(g=>order.indexOf(g)<0));
+  sel.innerHTML='';
+  for(const g of groups){
+    const og=document.createElement('optgroup'); og.label=g;
+    for(const k of byGroup[g]){ const o=document.createElement('option'); o.value=k; o.textContent=entries[k].name; og.appendChild(o); }
+    sel.appendChild(og);
+  }
+  sel.value=cur;
+}
+function fillFlat(sel, entries, cur){
+  sel.innerHTML='';
+  for(const k in entries){ const o=document.createElement('option'); o.value=k; o.textContent=entries[k].name||entries[k]; sel.appendChild(o); }
+  sel.value=cur;
+}
+fillSelect($('theme'), THEMES, ['signature','classic','retro computing','retro gaming','80s neon'], state.theme);
+fillSelect($('ramp'), RAMPS, ['ascii','digits','symbols','blocks','script','kana','CJK'], state.ramp);
+fillFlat($('font'), FONTS, state.font);
+fillFlat($('brush'), BRUSHES, state.brush);
+
 function bindSlider(id,key,fmt,after){
   const el=$(id),out=$(id+'V');
-  const upd=()=>{ state[key]=+el.value; if(out)out.textContent=fmt?fmt(+el.value):el.value; if(after)after(); };
+  const upd=()=>{ state[key]=+el.value; if(out)out.textContent=fmt?fmt(+el.value):el.value; if(after)after(); persist(); };
   el.addEventListener('input',upd); el.value=state[key]; upd();
 }
 bindSlider('speed','speed');
@@ -452,40 +698,52 @@ bindSlider('visc','visc');
 bindSlider('diff','diff');
 bindSlider('fade','fade',v=>v+'%');
 bindSlider('force','force');
+bindSlider('grav','grav',v=>v+'%');
 bindSlider('detail','detail',v=>v+'px',layout);
 bindSlider('count','count');
 // contrast slider drives gamma (stored 0.30..1.40)
 (function(){
   const el=$('gamma'),out=$('gammaV');
-  const upd=()=>{ state.gamma=(+el.value)/100; if(out)out.textContent=state.gamma.toFixed(2); };
+  const upd=()=>{ state.gamma=(+el.value)/100; if(out)out.textContent=state.gamma.toFixed(2); persist(); };
   el.addEventListener('input',upd);
   el.value=Math.round(state.gamma*100); upd();
 })();
 
 $('field').value=state.field;
-$('field').addEventListener('change',e=>{ state.field=e.target.value; updateSpinColorAvail(); rebuildColors(); });
-$('theme').value=state.theme;
-$('theme').addEventListener('change',e=>{ state.theme=e.target.value; rebuildColors(); });
-$('ramp').value=state.ramp;
-$('ramp').addEventListener('change',e=>{ state.ramp=e.target.value; });
+$('field').addEventListener('change',e=>{ state.field=e.target.value; updateSpinColorAvail(); rebuildColors(); persist(); });
+$('theme').addEventListener('change',e=>{ state.theme=e.target.value; rebuildColors(); persist(); });
+$('ramp').addEventListener('change',e=>{ state.ramp=e.target.value; persist(); });
+$('font').addEventListener('change',e=>{ state.font=e.target.value; persist(); });
+$('brush').addEventListener('change',e=>{ state.brush=e.target.value; persist(); });
 
 // segmented spin-direction control
 $('spinSeg').querySelectorAll('button').forEach(b=>{
   b.addEventListener('click',()=>{
     state.spinMode=b.dataset.spin;
     $('spinSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
+    persist();
   });
 });
+// reflect restored spinMode on boot (the segmented control's 'on' is otherwise hardcoded to 'auto')
+$('spinSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x.dataset.spin===state.spinMode));
 
 function toggleBtn(id,key,after){
   const el=$(id);
   el.classList.toggle('on',state[key]);
-  el.addEventListener('click',()=>{ state[key]=!state[key]; el.classList.toggle('on',state[key]); if(after)after(); });
+  el.addEventListener('click',()=>{ state[key]=!state[key]; el.classList.toggle('on',state[key]); if(after)after(); persist(); });
 }
 toggleBtn('auto','auto');
 toggleBtn('invert','invert');
 toggleBtn('spinColor','spinColor',rebuildColors);
 $('reseed2').addEventListener('click',reseed);
+
+// randomize the whole look + reseed
+$('randomize').addEventListener('click',()=>{
+  const pick=o=>{const ks=Object.keys(o);return ks[Math.floor(Math.random()*ks.length)];};
+  state.theme=pick(THEMES); state.ramp=pick(RAMPS); state.font=pick(FONTS); state.brush=pick(BRUSHES);
+  $('theme').value=state.theme; $('ramp').value=state.ramp; $('font').value=state.font; $('brush').value=state.brush;
+  rebuildColors(); reseed(); persist();
+});
 
 function updateSpinColorAvail(){
   $('spinColor').classList.toggle('disabled',state.field!=='vort');
@@ -505,6 +763,7 @@ document.querySelectorAll('#quick .qbtn[data-act]').forEach(b=>{
       case 'pause': setPause(!state.paused); break;
       case 'reseed': reseed(); break;
       case 'clear': fluid.d.fill(0); runMax=1e-3; break;
+      case 'gravity': setGravity(!state.gravity); break;
       case 'fs': toggleFS(); break;
     }
   });
@@ -517,7 +776,7 @@ $('expand').addEventListener('click',toggleSheet);
 $('grab').addEventListener('click',toggleSheet);
 
 // fleeting hint
-let hintTimer=setTimeout(dismissHint,3500);
+let hintTimer=setTimeout(dismissHint,3800);
 function dismissHint(){ clearTimeout(hintTimer); const h=$('hint'); if(h) h.classList.add('gone'); }
 
 // pause when backgrounded (battery)
@@ -534,7 +793,9 @@ window.addEventListener('resize',onResize);
 window.addEventListener('orientationchange',onResize);
 
 /* ===== 8. BOOT ===== */
-state.detail=defaultCell(window.innerWidth,window.innerHeight);
+if(!(savedState && typeof savedState==='object' && 'detail' in savedState)){
+  state.detail=defaultCell(window.innerWidth,window.innerHeight);
+}
 $('detail').value=state.detail; $('detailV').textContent=state.detail+'px';
 rebuildColors();
 layout();

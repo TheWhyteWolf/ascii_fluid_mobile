@@ -1,0 +1,38 @@
+{
+  "name": "ascii_fluid_mobile",
+  "version": "1.0.0",
+  "description": "ASCII fluid simulation — mobile web toy + Android (Capacitor) app",
+  "main": "index.html",
+  "scripts": {
+    "sync": "node scripts/sync-www.mjs",
+    "copy": "npm run sync && npx cap copy android",
+    "open": "npm run copy && npx cap open android",
+    "apk": "npm run copy && cd android && ./gradlew assembleDebug"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TheWhyteWolf/ascii_fluid_mobile.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/TheWhyteWolf/ascii_fluid_mobile/issues"
+  },
+  "homepage": "https://github.com/TheWhyteWolf/ascii_fluid_mobile#readme",
+  "dependencies": {
+    "@capacitor/android": "^6.2.1",
+    "@capacitor/core": "^6.2.1",
+    "@fontsource/dotgothic16": "^5.2.8",
+    "@fontsource/ibm-plex-mono": "^5.2.7",
+    "@fontsource/jetbrains-mono": "^5.2.8",
+    "@fontsource/major-mono-display": "^5.2.8",
+    "@fontsource/share-tech-mono": "^5.2.7",
+    "@fontsource/space-mono": "^5.2.9",
+    "@fontsource/vt323": "^5.2.7"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.2.1"
+  }
+}

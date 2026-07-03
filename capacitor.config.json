@@ -1,0 +1,13 @@
+{
+  "appId": "com.voyd.asciifluid",
+  "appName": "ASCII Fluid",
+  "webDir": "www",
+  "backgroundColor": "#0a0c09",
+  "android": {
+    "backgroundColor": "#0a0c09",
+    "allowMixedContent": false
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}
